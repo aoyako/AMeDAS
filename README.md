@@ -4,7 +4,7 @@ Only master stations are considered.
 
 ### Prerequisites
 ```bash
-python3 -m venv env
+python3 -m venv amedas
 python3 -m pip install -r requirements.txt
 ```
 
