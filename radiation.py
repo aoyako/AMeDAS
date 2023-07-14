@@ -3,6 +3,8 @@ import os
 import pandas as pd
 from dateutil import relativedelta
 import utils
+from typing import List
+from datetime import datetime
 
 STATION_NAMES = {
     "47409": "abs", # Abashiri
@@ -13,10 +15,10 @@ STATION_NAMES = {
     "47991": "mnm", # Minamitorishima
 }
 
-class RadiationProcessor():
+class RadiationProcessor(utils.Processor):
     @staticmethod
-    def extract_csv(file):
-        with open(file, 'r', errors='ignore') as f:
+    def extract_csv(file: str):
+        with open(file, 'r', errors="ignore") as f:
             content = f.readlines()
 
             obs = []
@@ -34,16 +36,16 @@ class RadiationProcessor():
             df.to_csv(file, index=False)
 
     @staticmethod
-    def merge_csvs(files, name):
+    def merge_csvs(files: List[str], name: str):
         df = pd.DataFrame()
         for file in files:
             tmp_df = pd.read_csv(file)
             df = pd.concat([df, tmp_df], axis=0)
         
-        df.to_csv(name+"_rad.csv", index=False)
+        df.to_csv(name + "_rad.csv", index=False)
         
     @staticmethod
-    def format_csv(file, date):
+    def format_csv(file: str, date: datetime):
         df = pd.read_csv(file)
         df["month"] = date.month
         df["year"] = date.year
@@ -51,16 +53,16 @@ class RadiationProcessor():
         
         df.to_csv(file, index=False)
 
-def get_download_url_dl(name, year, month):
+def get_download_url_dl(name: str, year: int, month: int):
     return f"https://www.data.jma.go.jp/gmd/env/radiation/data/geppo/{year}{month:02}/DL{year}{month:02}_{name}.txt"
 
-def get_download_url_df(name, year, month):
+def get_download_url_df(name: str, year: int, month: int):
     return f"https://www.data.jma.go.jp/gmd/env/radiation/data/geppo/{year}{month:02}/DF{year}{month:02}_{name}.txt"
 
-def get_download_url_dr(name, year, month):
+def get_download_url_dr(name: str, year: int, month: int):
     return f"https://www.data.jma.go.jp/gmd/env/radiation/data/geppo/{year}{month:02}/DR{year}{month:02}_{name}.txt"
 
-def get_station(station, begin, end):
+def get_station(station: str, begin: datetime, end: datetime):
     download_dates = []
     while begin <= end:
         download_dates.append(begin)

@@ -7,24 +7,25 @@ from dateutil import relativedelta
 import sys
 import radiation as rad
 import utils
+from typing import List
+from datetime import datetime
 
-
-class WeatherProcessor():
+class WeatherProcessor(utils.Processor):
     @staticmethod
-    def extract_csv(file):
+    def extract_csv(file: str):
         with open(file, 'r') as f:
             content = f.read()
 
-            soup = BeautifulSoup(content, 'html.parser')
+            soup = BeautifulSoup(content, "html.parser")
 
-            table_tags = soup.find_all('table')
+            table_tags = soup.find_all("table")
             df = pd.read_html(str(table_tags[5]))[0]
             df.columns = [' - '.join([col_part for i, col_part in enumerate(col)
                                     if col_part not in col[i+1:]]) for col in df.columns]
             df.to_csv(file, index=False)
 
     @staticmethod
-    def merge_csvs(files, name):
+    def merge_csvs(files: List[str], name: str):
         df = pd.DataFrame()
         for file in files:
             tmp_df = pd.read_csv(file)
@@ -33,7 +34,7 @@ class WeatherProcessor():
         df.to_csv(name+".csv", index=False)
 
     @staticmethod
-    def format_csv(file, date):
+    def format_csv(file: str, date: datetime):
         df = pd.read_csv(file)
         df["month"] = date.month
         df["year"] = date.year
@@ -43,7 +44,7 @@ class WeatherProcessor():
         df.to_csv(file, index=False)
 
 
-def get_download_url(station_id, station_code, year, month, day) -> str:
+def get_download_url(station_id: str, station_code: str, year: int, month: int, day: int) -> str:
     return f"https://www.data.jma.go.jp/obd/stats/etrn/view/daily_s1.php?prec_no={station_code}&block_no={station_id}&year={year}&month={month}&day={day}"
 
 
