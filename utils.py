@@ -4,11 +4,14 @@ from pathlib import Path
 import os
 from typing import List
 from datetime import datetime
+import logging
 
 CSV_DIR = "csv"
 OUTPUT_DIR = "output"
 Path(CSV_DIR).mkdir(parents=True, exist_ok=True)
 Path(OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
+
+STATIONS = "stations.csv"
 
 class Processor():
     @staticmethod
@@ -34,7 +37,7 @@ async def download_file(session: aiohttp.ClientSession, url: str, name: str):
                         f.write(chunk)
                 downloaded = True
         except RuntimeError as e:
-            print(e)
+            logging.exception(e)
 
 async def download_files(name: str, urls: List[str], dates: List[datetime], processor: Processor):
     async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit=5), timeout=10000) as session:

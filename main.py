@@ -9,6 +9,7 @@ import radiation as rad
 import utils
 from typing import List
 from datetime import datetime
+import logging
 
 class WeatherProcessor(utils.Processor):
     @staticmethod
@@ -49,8 +50,6 @@ def get_download_url(station_id: str, station_code: str, year: int, month: int, 
 
 
 if __name__ == "__main__":
-    sys.argv.append("2021/01/01")
-    sys.argv.append("2022/01/01")
     begin_day_string = sys.argv[1]
     end_day_string = sys.argv[2]
     
@@ -64,7 +63,7 @@ if __name__ == "__main__":
         download_dates.append(curr_day)
         curr_day += relativedelta.relativedelta(months=1)
 
-    stations_df = pd.read_csv("stations.csv")
+    stations_df = pd.read_csv(utils.STATIONS)
     station_ids = stations_df["id"].to_numpy()
     station_codes = [str(code)[:2] for code in stations_df["code"].to_numpy()]
 
@@ -81,7 +80,7 @@ if __name__ == "__main__":
             os.path.join(utils.OUTPUT_DIR, f"{station[0]:05}"), urls, download_dates, WeatherProcessor))
         
         radiation = rad.get_station(f"{station[0]:05}", begin_day, end_day)
-        print(f"Downloaded station {station[0]}")
+        logging.info(f"Downloaded station {station[0]}")
 
         weather = pd.read_csv(os.path.join(utils.OUTPUT_DIR, f"{station[0]:05}") + ".csv").rename(columns={"日": "day"})
         
@@ -96,9 +95,9 @@ if __name__ == "__main__":
                 weather[c] = weather[c].astype("str").str.replace(" ", "")
                 weather[c] = weather[c].replace('', 0)
             except Exception as e:
-                print(station, c, e)
+                logging.exception(station, c, e)
 
         weather = pd.merge(weather, radiation, on=["year", "month", "day"], how="outer")
         weather.to_csv(os.path.join(utils.OUTPUT_DIR, f"{station[0]:05}") + ".csv", index=False)
         
-    print("Done!")
+    logging.info("Done!")
