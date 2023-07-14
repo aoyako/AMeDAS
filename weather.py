@@ -1,12 +1,11 @@
+import asyncio
 import os
 from datetime import datetime
 from bs4 import BeautifulSoup
 import pandas as pd
-import sys
-import radiation as rad
-import weather as wr
+from dateutil import relativedelta
 import utils
-from typing import List
+from typing import List, Tuple
 from datetime import datetime
 import logging
 import numpy as np
@@ -58,28 +57,26 @@ def get_download_url_master(station_id: str, station_code: str, year: int, month
 def get_download_url_norm(station_id: str, station_code: str, year: int, month: int, day: int) -> str:
     return f"https://www.data.jma.go.jp/obd/stats/etrn/view/daily_a1.php?prec_no={station_code}&block_no={station_id:04}&year={year}&month={month}&day={day}"
 
-
-if __name__ == "__main__":
-    begin_day_string = sys.argv[1]
-    end_day_string = sys.argv[2]
+def get_station(station: Tuple[int, str], begin: datetime, end: datetime):
+    download_dates = []
+    while begin <= end:
+        download_dates.append(begin)
+        begin += relativedelta.relativedelta(months=1)
     
-    begin_day = datetime.strptime(begin_day_string, "%Y/%m/%d")
-    end_day = datetime.strptime(end_day_string, "%Y/%m/%d")
+    urls = []
+    # master
+    if str(station[0])[0] == "4":
+        urls = [get_download_url_master(
+            station[0], station[1], date.year, date.month, date.day) for date in download_dates]
+    else:
+        urls = [get_download_url_norm(
+            station[0], station[1], date.year, date.month, date.day) for date in download_dates]
 
-    stations_df = pd.read_csv(utils.STATIONS)
-    station_ids = stations_df["id"].to_numpy()
-    station_codes = [str(code)[:2] for code in stations_df["code"].to_numpy()]
+    loop = asyncio.get_event_loop()
 
-    stations = list(zip(station_ids, station_codes))
+    loop.run_until_complete(utils.download_files(
+            os.path.join(utils.OUTPUT_DIR, f"{station[0]:05}"), urls, download_dates, WeatherProcessor))
 
-    for station in stations:
-        weather = wr.get_station(station, begin_day, end_day)       
-        radiation = rad.get_station(f"{station[0]:05}", begin_day, end_day)
-        logging.info(f"Downloaded station {station[0]}")
-
-        weather.rename(columns={"日": "day"}, inplace=True)
-
-        weather = pd.merge(weather, radiation, on=["year", "month", "day"], how="outer")
-        weather.to_csv(os.path.join(utils.OUTPUT_DIR, f"{station[0]:05}") + ".csv", index=False)
-        
-    logging.info("Done!")
+    weather = pd.read_csv(os.path.join(utils.OUTPUT_DIR, f"{station[0]:05}") + ".csv").rename(columns={"日": "day"})
+    
+    return weather
