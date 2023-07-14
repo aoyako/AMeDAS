@@ -85,10 +85,10 @@ def get_station(station: str, begin: datetime, end: datetime):
     urls = [get_download_url_dl(name, date.year, date.month) for date in download_dates]
     loop.run_until_complete(utils.download_files(os.path.join(utils.CSV_DIR, f"{station[0]:05}" + "_DL"), urls, download_dates, RadiationProcessor))
         
-    dr = pd.read_csv(os.path.join(utils.CSV_DIR, f"{station[0]:05}" + "_DR_rad.csv")).rename(columns={'rad': 'dr'})
-    df = pd.read_csv(os.path.join(utils.CSV_DIR, f"{station[0]:05}" + "_DF_rad.csv")).rename(columns={'rad': 'dfr'})
-    dl = pd.read_csv(os.path.join(utils.CSV_DIR, f"{station[0]:05}" + "_DL_rad.csv")).rename(columns={'rad': 'dlr'})
+    dr = pd.read_csv(os.path.join(utils.CSV_DIR, f"{station[0]:05}" + "_DR_rad.csv")).rename(columns={"rad": "dr"})
+    df = pd.read_csv(os.path.join(utils.CSV_DIR, f"{station[0]:05}" + "_DF_rad.csv")).rename(columns={"rad": "dfr"})
+    dl = pd.read_csv(os.path.join(utils.CSV_DIR, f"{station[0]:05}" + "_DL_rad.csv")).rename(columns={"rad": "dlr"})
 
-    df = pd.merge(pd.merge(dr, df, on=['year', 'month', 'day'], how='outer'), dl, on=['year', 'month', 'day'], how='outer')
+    df = pd.merge(pd.merge(dr, df, on=["year", "month", "day"], how="outer"), dl, on=["year", "month", "day"], how="outer")
         
     return df

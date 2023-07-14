@@ -20,7 +20,7 @@ class WeatherProcessor(utils.Processor):
 
             table_tags = soup.find_all("table")
             df = pd.read_html(str(table_tags[5]))[0]
-            df.columns = [' - '.join([col_part for i, col_part in enumerate(col)
+            df.columns = [" - ".join([col_part for i, col_part in enumerate(col)
                                     if col_part not in col[i+1:]]) for col in df.columns]
             df.to_csv(file, index=False)
 
@@ -89,16 +89,16 @@ if __name__ == "__main__":
             try:
                 if c in ["month", "year", "day"]:
                     continue
-                weather[c] = weather[c].astype("str").str.replace(')', '')
-                weather[c] = weather[c].astype("str").str.replace('×', '')
-                weather[c] = weather[c].astype("str").str.replace('--', '')
-                weather[c] = weather[c].astype("str").str.replace(']', '')
-                weather[c] = weather[c].astype("str").str.replace(' ', '')
+                weather[c] = weather[c].astype("str").str.replace(")", "")
+                weather[c] = weather[c].astype("str").str.replace("×", "")
+                weather[c] = weather[c].astype("str").str.replace("--", "")
+                weather[c] = weather[c].astype("str").str.replace("]", "")
+                weather[c] = weather[c].astype("str").str.replace(" ", "")
                 weather[c] = weather[c].replace('', 0)
             except Exception as e:
                 print(station, c, e)
 
-        weather = pd.merge(weather, radiation, on=['year', 'month', 'day'], how='outer')
+        weather = pd.merge(weather, radiation, on=["year", "month", "day"], how="outer")
         weather.to_csv(os.path.join(utils.OUTPUT_DIR, f"{station[0]:05}") + ".csv", index=False)
         
     print("Done!")
