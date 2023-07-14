@@ -1,6 +1,5 @@
 # AMeDAS
 Script to download daily statistics from AMeDAS website.\
-Only master stations are considered.
 
 ### Prerequisites
 ```bash
