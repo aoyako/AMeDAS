@@ -11,6 +11,8 @@ from typing import List
 from datetime import datetime
 import logging
 
+logging.basicConfig(level=logging.INFO)
+
 class WeatherProcessor(utils.Processor):
     @staticmethod
     def extract_csv(file: str):
@@ -41,6 +43,12 @@ class WeatherProcessor(utils.Processor):
         df["year"] = date.year
         df.replace("--", 0, inplace=True)
         df.replace("///", 0, inplace=True)
+        df.replace(")", "", inplace=True)
+        df.replace("×", "", inplace=True)
+        df.replace("--", "", inplace=True)
+        df.replace("]", "", inplace=True)
+        df.replace(" ", "", inplace=True)
+        df.replace("", 0, inplace=True)
 
         df.to_csv(file, index=False)
 
@@ -83,19 +91,6 @@ if __name__ == "__main__":
         logging.info(f"Downloaded station {station[0]}")
 
         weather = pd.read_csv(os.path.join(utils.OUTPUT_DIR, f"{station[0]:05}") + ".csv").rename(columns={"日": "day"})
-        
-        for c in weather.columns:
-            try:
-                if c in ["month", "year", "day"]:
-                    continue
-                weather[c] = weather[c].astype("str").str.replace(")", "")
-                weather[c] = weather[c].astype("str").str.replace("×", "")
-                weather[c] = weather[c].astype("str").str.replace("--", "")
-                weather[c] = weather[c].astype("str").str.replace("]", "")
-                weather[c] = weather[c].astype("str").str.replace(" ", "")
-                weather[c] = weather[c].replace('', 0)
-            except Exception as e:
-                logging.exception(station, c, e)
 
         weather = pd.merge(weather, radiation, on=["year", "month", "day"], how="outer")
         weather.to_csv(os.path.join(utils.OUTPUT_DIR, f"{station[0]:05}") + ".csv", index=False)
