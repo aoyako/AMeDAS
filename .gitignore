@@ -1,3 +1,4 @@
 csv/
 env/
 output/
+__pycache__
