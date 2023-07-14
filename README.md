@@ -1,5 +1,8 @@
 # AMeDAS
-Script to download daily statistics from AMeDAS website.\
+Script to download daily statistics from AMeDAS website.
+
+**The Automated Meteorological Data Acquisition System (AMeDAS)**\
+https://www.jma.go.jp/jma/en/Activities/amedas/amedas.html
 
 ### Prerequisites
 ```bash
