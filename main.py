@@ -10,6 +10,7 @@ import utils
 from typing import List
 from datetime import datetime
 import logging
+import numpy as np
 
 logging.basicConfig(level=logging.INFO)
 
@@ -41,20 +42,22 @@ class WeatherProcessor(utils.Processor):
         df = pd.read_csv(file)
         df["month"] = date.month
         df["year"] = date.year
-        df.replace("--", 0, inplace=True)
-        df.replace("///", 0, inplace=True)
-        df.replace(")", "", inplace=True)
-        df.replace("×", "", inplace=True)
-        df.replace("--", "", inplace=True)
-        df.replace("]", "", inplace=True)
+        df = df.applymap(lambda x: x.replace(")", "") if isinstance(x, str) else x)
+        df = df.applymap(lambda x: x.replace("]", "") if isinstance(x, str) else x)
+        df.replace("--", np.nan, inplace=True)
+        df.replace("///", np.nan, inplace=True)
+        df.replace("×", np.nan, inplace=True)
         df.replace(" ", "", inplace=True)
         df.replace("", 0, inplace=True)
 
         df.to_csv(file, index=False)
 
 
-def get_download_url(station_id: str, station_code: str, year: int, month: int, day: int) -> str:
+def get_download_url_master(station_id: str, station_code: str, year: int, month: int, day: int) -> str:
     return f"https://www.data.jma.go.jp/obd/stats/etrn/view/daily_s1.php?prec_no={station_code}&block_no={station_id}&year={year}&month={month}&day={day}"
+
+def get_download_url_norm(station_id: str, station_code: str, year: int, month: int, day: int) -> str:
+    return f"https://www.data.jma.go.jp/obd/stats/etrn/view/daily_a1.php?prec_no={station_code}&block_no={station_id:04}&year={year}&month={month}&day={day}"
 
 
 if __name__ == "__main__":
@@ -82,8 +85,15 @@ if __name__ == "__main__":
     loop = asyncio.get_event_loop()
 
     for station in stations:
-        urls = [get_download_url(
-            station[0], station[1], date.year, date.month, date.day) for date in download_dates]
+        urls = []
+        # master
+        if str(station[0])[0] == "4":
+            urls = [get_download_url_master(
+                station[0], station[1], date.year, date.month, date.day) for date in download_dates]
+        else:
+            urls = [get_download_url_norm(
+                station[0], station[1], date.year, date.month, date.day) for date in download_dates]
+
         loop.run_until_complete(utils.download_files(
             os.path.join(utils.OUTPUT_DIR, f"{station[0]:05}"), urls, download_dates, WeatherProcessor))
         
