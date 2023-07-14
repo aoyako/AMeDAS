@@ -1,4 +1,3 @@
-import aiohttp
 import asyncio
 import os
 from datetime import datetime
@@ -8,24 +7,28 @@ from dateutil import relativedelta
 import sys
 import radiation as rad
 import utils
+from typing import List
+from datetime import datetime
+import logging
 
+logging.basicConfig(level=logging.INFO)
 
-class WeatherProcessor():
+class WeatherProcessor(utils.Processor):
     @staticmethod
-    def extract_csv(file):
+    def extract_csv(file: str):
         with open(file, 'r') as f:
             content = f.read()
 
-            soup = BeautifulSoup(content, 'html.parser')
+            soup = BeautifulSoup(content, "html.parser")
 
-            table_tags = soup.find_all('table')
+            table_tags = soup.find_all("table")
             df = pd.read_html(str(table_tags[5]))[0]
-            df.columns = [' - '.join([col_part for i, col_part in enumerate(col)
+            df.columns = [" - ".join([col_part for i, col_part in enumerate(col)
                                     if col_part not in col[i+1:]]) for col in df.columns]
             df.to_csv(file, index=False)
 
     @staticmethod
-    def merge_csvs(files, name):
+    def merge_csvs(files: List[str], name: str):
         df = pd.DataFrame()
         for file in files:
             tmp_df = pd.read_csv(file)
@@ -34,23 +37,27 @@ class WeatherProcessor():
         df.to_csv(name+".csv", index=False)
 
     @staticmethod
-    def format_csv(file, date):
+    def format_csv(file: str, date: datetime):
         df = pd.read_csv(file)
         df["month"] = date.month
         df["year"] = date.year
         df.replace("--", 0, inplace=True)
         df.replace("///", 0, inplace=True)
+        df.replace(")", "", inplace=True)
+        df.replace("×", "", inplace=True)
+        df.replace("--", "", inplace=True)
+        df.replace("]", "", inplace=True)
+        df.replace(" ", "", inplace=True)
+        df.replace("", 0, inplace=True)
 
         df.to_csv(file, index=False)
 
 
-def get_download_url(station_id, station_code, year, month, day) -> str:
+def get_download_url(station_id: str, station_code: str, year: int, month: int, day: int) -> str:
     return f"https://www.data.jma.go.jp/obd/stats/etrn/view/daily_s1.php?prec_no={station_code}&block_no={station_id}&year={year}&month={month}&day={day}"
 
 
 if __name__ == "__main__":
-    sys.argv.append("2021/01/01")
-    sys.argv.append("2022/01/01")
     begin_day_string = sys.argv[1]
     end_day_string = sys.argv[2]
     
@@ -64,7 +71,7 @@ if __name__ == "__main__":
         download_dates.append(curr_day)
         curr_day += relativedelta.relativedelta(months=1)
 
-    stations_df = pd.read_csv("stations.csv")
+    stations_df = pd.read_csv(utils.STATIONS)
     station_ids = stations_df["id"].to_numpy()
     station_codes = [str(code)[:2] for code in stations_df["code"].to_numpy()]
 
@@ -81,24 +88,11 @@ if __name__ == "__main__":
             os.path.join(utils.OUTPUT_DIR, f"{station[0]:05}"), urls, download_dates, WeatherProcessor))
         
         radiation = rad.get_station(f"{station[0]:05}", begin_day, end_day)
-        print(f"Downloaded station {station[0]}")
+        logging.info(f"Downloaded station {station[0]}")
 
         weather = pd.read_csv(os.path.join(utils.OUTPUT_DIR, f"{station[0]:05}") + ".csv").rename(columns={"日": "day"})
-        
-        for c in weather.columns:
-            try:
-                if c in ["month", "year", "day"]:
-                    continue
-                weather[c] = weather[c].astype("str").str.replace(')', '')
-                weather[c] = weather[c].astype("str").str.replace('×', '')
-                weather[c] = weather[c].astype("str").str.replace('--', '')
-                weather[c] = weather[c].astype("str").str.replace(']', '')
-                weather[c] = weather[c].astype("str").str.replace(' ', '')
-                weather[c] = weather[c].replace('', 0)
-            except Exception as e:
-                print(station, c, e)
 
-        weather = pd.merge(weather, radiation, on=['year', 'month', 'day'], how='outer')
+        weather = pd.merge(weather, radiation, on=["year", "month", "day"], how="outer")
         weather.to_csv(os.path.join(utils.OUTPUT_DIR, f"{station[0]:05}") + ".csv", index=False)
         
-    print("Done!")
+    logging.info("Done!")

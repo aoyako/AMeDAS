@@ -2,13 +2,29 @@ import aiohttp
 import asyncio
 from pathlib import Path
 import os
+from typing import List
+from datetime import datetime
+import logging
 
 CSV_DIR = "csv"
 OUTPUT_DIR = "output"
 Path(CSV_DIR).mkdir(parents=True, exist_ok=True)
 Path(OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
 
-async def download_file(session, url, name):
+STATIONS = "stations.csv"
+
+class Processor():
+    @staticmethod
+    def extract_csv(file: str):
+        pass
+    @staticmethod
+    def format_csv(file: str, dates: List[datetime]):
+        pass
+    @staticmethod
+    def merge_csvs(files: List[str]):
+        pass
+
+async def download_file(session: aiohttp.ClientSession, url: str, name: str):
     downloaded = False
     while not downloaded:
         try:
@@ -21,9 +37,9 @@ async def download_file(session, url, name):
                         f.write(chunk)
                 downloaded = True
         except RuntimeError as e:
-            print(e)
+            logging.exception(e)
 
-async def download_files(name, urls, dates, processor):
+async def download_files(name: str, urls: List[str], dates: List[datetime], processor: Processor):
     async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit=5), timeout=10000) as session:
         tasks = []
         filenames = [os.path.join(CSV_DIR, f"{l}.csv") for l in range(len(urls))]
