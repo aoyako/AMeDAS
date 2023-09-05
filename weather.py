@@ -59,10 +59,11 @@ def make_processor(mode: str):
             df = df.applymap(lambda x: x.replace(")", "") if isinstance(x, str) else x)
             df = df.applymap(lambda x: x.replace("]", "") if isinstance(x, str) else x)
             df.replace("--", np.nan, inplace=True)
+            df.replace("-", np.nan, inplace=True)
             df.replace("///", np.nan, inplace=True)
             df.replace("×", np.nan, inplace=True)
             df.replace(" ", "", inplace=True)
-            df.replace("", 0, inplace=True)
+            df.replace("", np.nan, inplace=True)
 
             df.to_csv(file, index=False)
             
